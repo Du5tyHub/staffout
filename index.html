@@ -1,0 +1,607 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catatan Keluar Semasa Bertugas Bagi Kakitangan Tahun 2025</title>
+  <style>
+    body {
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 10px;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: #333;
+      font-family: Arial, sans-serif;
+      font-weight: normal;
+    }
+    input[type="text"],
+    input[type="password"],
+    input[type="datetime-local"],
+    textarea,
+    select,
+    button {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .table-container {
+      margin-top: 20px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #ccc;
+      font-family: Arial, sans-serif;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+    th {
+      background-color: #e9ecef;
+      font-weight: bold;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+      padding: 5px 10px;
+      font-size: 14px;
+      width: auto;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .download-btn {
+      background-color: #28a745;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
+    }
+    .download-btn:hover {
+      background-color: #218838;
+    }
+    .error-message {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
+      font-family: Arial, sans-serif;
+    }
+    #loginContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #loginForm {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+    #loginForm h2 {
+      margin-bottom: 20px;
+    }
+    #loginError {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
+    }
+    #logoutBtn {
+      background-color: #6c757d;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
+      display: none;
+    }
+    #logoutBtn:hover {
+      background-color: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div id="loginContainer">
+    <div id="loginForm">
+      <h2>Log Masuk</h2>
+      <div class="form-group">
+        <label for="username">Nama Pengguna</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Kata Kunci</label>
+        <input type="password" id="password" required>
+      </div>
+      <button onclick="loginUser()">Log Keluar</button>
+      <div id="loginError" class="error-message"></div>
+    </div>
+  </div>
+  <div class="container" id="mainContainer" style="display: none;">
+    <h1>Catatan Keluar Semasa</h1>
+    <h1>Bagi Kakitangan Tahun 2025</h1>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+    <!-- Form -->
+    <form id="steppingOutForm">
+      <div class="form-group">
+        <label for="staffName">Nama Kakitangan</label>
+        <select id="staffName" name="staffName" required>
+          <option value="" disabled selected>Pilih</option>
+          <option value="Nurulikmah binti Masdi">Nurulikmah binti Masdi</option>
+          <option value="Razmah binti Haji Tamam">Razmah binti Haji Tamam</option>
+          <option value="Roslizah binti Mohd Rosman">Roslizah binti Mohd Rosman</option>
+          <option value="Rosmawati binti Serbani">Rosmawati binti Serbani</option>
+          <option value="Siti Musfirah binti Mustapa">Siti Musfirah binti Mustapa</option>
+          <option value="Siti Zulina binti Hj Lamam">Siti Zulina binti Hj Lamam</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="staffId">Kata Laluan (Staff ID)</label>
+        <input type="password" id="staffId" name="staffId" required placeholder="contoh ID: 001">
+      </div>
+      <div class="form-group">
+        <label for="dateTime">Tarikh & Jam Keluar</label>
+        <input type="datetime-local" id="dateTime" name="dateTime" required>
+      </div>
+      <div class="form-group">
+        <label for="expectedReturn">Tarikh & Jam Dijangka Balik</label>
+        <input type="datetime-local" id="expectedReturn" name="expectedReturn" required>
+      </div>
+      <div class="form-group">
+        <label for="destination">Destinasi</label>
+        <input type="text" id="destination" name="destination" required>
+      </div>
+      <div class="form-group">
+        <label for="reason">Sebab-Sebab Keluar</label>
+        <textarea id="reason" name="reason" maxlength="1000" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="approvedBy">Dibenarkan oleh</label>
+        <select id="approvedBy" name="approvedBy" required>
+          <option value="" disabled selected>Pilih</option>
+          <option value="Principal">Pengetua</option>
+          <option value="DP Admin1">DP Admin 1</option>
+          <option value="DP Admin2">DP Admin 2</option>
+        </select>
+      </div>
+      <button type="submit">Hantar</button>
+      <div id="errorMessage" class="error-message"></div>
+    </form>
+
+    <!-- Table -->
+    <div class="table-container">
+      <h2>Rekod</h2>
+      <button class="download-btn" onclick="downloadExcel()">Muat Turun Rekod</button>
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Tarikh & Jam Keluar</th>
+            <th>Dijangka Balik</th>
+            <th>Destinasi</th>
+            <th>Sebab</th>
+            <th>Dibenarkan Oleh</th>
+            <th>Tindakan</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // User credentials (mock for demo; replace with server-side auth in production)
+    const users = {
+      "admin1": { password: "adminpass1", role: "Admin" },
+      "staff1": { password: "staffpass1", role: "Staff" }
+    };
+
+    // Staff ID mapping
+    const staffIdMap = {
+      "Nurulikmah binti Masdi": "001",
+      "Razmah binti Haji Tamam": "002",
+      "Roslizah binti Mohd Rosman": "003",
+      "Rosmawati binti Serbani": "004",
+      "Siti Musfirah binti Mustapa": "005",
+      "Siti Zulina binti Hj Lamam": "006"
+    };
+
+    let currentUser = null;
+
+    // Login function
+    function loginUser() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const loginError = document.getElementById('loginError');
+      
+      loginError.style.display = 'none';
+      loginError.textContent = '';
+
+      if (!username || !password) {
+        loginError.textContent = 'Please enter both username and password.';
+        loginError.style.display = 'block';
+        return;
+      }
+
+      const user = users[username];
+      if (!user || user.password !== password) {
+        loginError.textContent = 'Invalid username or password.';
+        loginError.style.display = 'block';
+        return;
+      }
+
+      currentUser = { username, role: user.role };
+      console.log('Logged in:', currentUser);
+
+      document.getElementById('loginContainer').style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'block';
+      loadRecords();
+    }
+
+    // Logout function
+    function logout() {
+      currentUser = null;
+      document.getElementById('mainContainer').style.display = 'none';
+      document.getElementById('loginContainer').style.display = 'flex';
+      document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      console.log('Logged out');
+    }
+
+    // Load records from localStorage
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!currentUser) {
+        document.getElementById('loginContainer').style.display = 'flex';
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('steppingOutForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.style.display = 'none';
+      errorMessage.textContent = '';
+
+      console.log('Form submitted');
+
+      // Get form values
+      const staffName = document.getElementById('staffName').value;
+      const staffId = document.getElementById('staffId').value.trim();
+      const dateTime = document.getElementById('dateTime').value;
+      const expectedReturn = document.getElementById('expectedReturn').value;
+      const destination = document.getElementById('destination').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const approvedBy = document.getElementById('approvedBy').value;
+
+      console.log('Form values:', { staffName, staffId, dateTime, expectedReturn, destination, reason, approvedBy });
+
+      // Basic validation
+      if (!staffName || !staffId || !dateTime || !expectedReturn || !destination || !reason || !approvedBy) {
+        errorMessage.textContent = 'Sila isi semua ruangan.';
+        errorMessage.style.display = 'block';
+        console.log('Validation failed: Missing fields');
+        return;
+      }
+
+      // Validate Staff ID
+      if (staffId !== staffIdMap[staffName]) {
+        errorMessage.textContent = 'Kata laluan tidak sah untuk nama kakitangan yang dipilih.';
+        errorMessage.style.display = 'block';
+        console.log('Validation failed: Incorrect Staff ID', { staffName, staffId, expectedId: staffIdMap[staffName] });
+        return;
+      }
+
+      // Validate datetime inputs
+      let outTime, returnTime;
+      try {
+        outTime = new Date(dateTime);
+        returnTime = new Date(expectedReturn);
+      } catch (error) {
+        errorMessage.textContent = 'Format tarikh tidak sah. Sila gunakan pemilih tarikh.';
+        errorMessage.style.display = 'block';
+        console.log('Validation failed: Date parsing error', error);
+        return;
+      }
+
+      if (isNaN(outTime.getTime()) || isNaN(returnTime.getTime())) {
+        errorMessage.textContent = 'Sila masukkan tarikh dan masa yang sah.';
+        errorMessage.style.display = 'block';
+        console.log('Validation failed: Invalid date/time', { dateTime, expectedReturn });
+        return;
+      }
+
+      if (returnTime <= outTime) {
+        errorMessage.textContent = 'Masa jangka balik mestilah selepas masa keluar.';
+        errorMessage.style.display = 'block';
+        console.log('Validation failed: Return time not after out time', { outTime, returnTime });
+        return;
+      }
+
+      try {
+        // Create record object with unique ID
+        const record = {
+          id: Date.now(),
+          staffName: staffName,
+          staffId: staffId,
+          dateTime: outTime.toLocaleString(),
+          expectedReturn: returnTime.toLocaleString(),
+          destination: destination,
+          reason: reason,
+          approvedBy: approvedBy
+        };
+
+        // Save to localStorage
+        let records = [];
+        try {
+          const storedRecords = localStorage.getItem('steppingOutRecords');
+          if (storedRecords) {
+            records = JSON.parse(storedRecords);
+            if (!Array.isArray(records)) {
+              records = [];
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing localStorage:', error);
+          records = [];
+        }
+
+        records.push(record);
+        localStorage.setItem('steppingOutRecords', JSON.stringify(records));
+        console.log('Record saved:', record);
+
+        // Clear form
+        document.getElementById('steppingOutForm').reset();
+
+        // Reload table
+        loadRecords();
+      } catch (error) {
+        errorMessage.textContent = 'Ralat berlaku semasa menyimpan rekod. Sila cuba lagi.';
+        errorMessage.style.display = 'block';
+        console.error('Error saving record:', error);
+      }
+    });
+
+    // Function to load and display records
+    function loadRecords() {
+      const recordsBody = document.getElementById('recordsBody');
+      recordsBody.innerHTML = '';
+      
+      try {
+        let records = [];
+        const storedRecords = localStorage.getItem('steppingOutRecords');
+        if (storedRecords) {
+          records = JSON.parse(storedRecords);
+          if (!Array.isArray(records)) {
+            records = [];
+          }
+        }
+        console.log('Loaded records:', records);
+        
+        records.forEach(record => {
+          if (record && record.staffName && record.staffId && record.dateTime && record.expectedReturn && record.destination && record.reason && record.approvedBy) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${record.staffName}</td>
+              <td>${record.dateTime}</td>
+              <td>${record.expectedReturn}</td>
+              <td>${record.destination}</td>
+              <td>${record.reason}</td>
+              <td>${record.approvedBy}</td>
+              <td>${
+                currentUser && currentUser.role === 'Admin'
+                  ? `<button class="delete-btn" onclick="deleteRecord(${record.id})">Padam</button>`
+                  : ''
+              }</td>
+            `;
+            recordsBody.appendChild(row);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading records:', error);
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = 'Ralat memuatkan rekod. Sila muat semula halaman.';
+        errorMessage.style.display = 'block';
+      }
+    }
+
+    // Function to delete a record
+    function deleteRecord(id) {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        console.log('Delete attempt blocked: User not Admin');
+        return;
+      }
+
+      try {
+        let records = [];
+        const storedRecords = localStorage.getItem('steppingOutRecords');
+        if (storedRecords) {
+          records = JSON.parse(storedRecords);
+          if (!Array.isArray(records)) {
+            records = [];
+          }
+        }
+        records = records.filter(record => record.id !== id);
+        localStorage.setItem('steppingOutRecords', JSON.stringify(records));
+        console.log('Record deleted, ID:', id);
+        loadRecords();
+      } catch (error) {
+        console.error('Error deleting record:', error);
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = 'Ralat memadam rekod. Sila cuba lagi.';
+        errorMessage.style.display = 'block';
+      }
+    }
+
+    // Function to download records as Excel-compatible CSV
+    function downloadExcel() {
+      try {
+        let records = [];
+        const storedRecords = localStorage.getItem('steppingOutRecords');
+        if (storedRecords) {
+          records = JSON.parse(storedRecords);
+          if (!Array.isArray(records)) {
+            records = [];
+          }
+        }
+        if (records.length === 0) {
+          const errorMessage = document.getElementById('errorMessage');
+          errorMessage.textContent = 'Tiada rekod untuk dimuat turun.';
+          errorMessage.style.display = 'block';
+          console.log('No records to download');
+          return;
+        }
+
+        // Prepare CSV data
+        const headers = ['Nama Kakitangan', 'ID Kakitangan', 'Tarikh & Jam Keluar', 'Dijangka Balik', 'Destinasi', 'Sebab', 'Dibenarkan Oleh'];
+        const csvRows = [
+          headers.join(','), // Header row
+          ...records.map(record =>
+            [
+              `"${(record.staffName || '').replace(/"/g, '""')}"`, // Escape quotes
+              `"${(record.staffId || '').replace(/"/g, '""')}"`,
+              `"${(record.dateTime || '').replace(/"/g, '""')}"`,
+              `"${(record.expectedReturn || '').replace(/"/g, '""')}"`,
+              `"${(record.destination || '').replace(/"/g, '""')}"`,
+              `"${(record.reason || '').replace(/"/g, '""')}"`,
+              `"${(record.approvedBy || '').replace(/"/g, '""')}"`
+            ].join(',')
+          )
+        ];
+
+        // Create CSV content
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Staff_Stepping_Out_Records.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        console.log('CSV file downloaded successfully');
+      } catch (error) {
+        console.error('Error downloading CSV:', error);
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = 'Ralat memuat turun rekod. Sila cuba lagi.';
+        errorMessage.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
